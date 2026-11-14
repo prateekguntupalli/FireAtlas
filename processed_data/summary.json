@@ -1,0 +1,438 @@
+{
+  "generated_at": "2026-11-14T09:15:49.204297",
+  "total_countries": 23,
+  "total_detections": 50329759,
+  "sources": [
+    "MODIS_SP",
+    "VIIRS_SNPP_SP"
+  ],
+  "harmonization_ratios": {
+    "Argentina": {
+      "viirs_modis_ratio": 3.5033,
+      "overlap_months": 156
+    },
+    "Barbados": {
+      "viirs_modis_ratio": 4.0,
+      "overlap_months": 51
+    },
+    "Bolivia": {
+      "viirs_modis_ratio": 3.6487,
+      "overlap_months": 156
+    },
+    "Brazil": {
+      "viirs_modis_ratio": 3.6405,
+      "overlap_months": 156
+    },
+    "Chile": {
+      "viirs_modis_ratio": 3.512,
+      "overlap_months": 156
+    },
+    "Colombia": {
+      "viirs_modis_ratio": 4.4455,
+      "overlap_months": 156
+    },
+    "Cura\u00e7ao": {
+      "viirs_modis_ratio": 15.0,
+      "overlap_months": 27
+    },
+    "Ecuador": {
+      "viirs_modis_ratio": 4.5234,
+      "overlap_months": 156
+    },
+    "Falkland Islands": {
+      "viirs_modis_ratio": 4.4545,
+      "overlap_months": 20
+    },
+    "France": {
+      "viirs_modis_ratio": 4.0,
+      "overlap_months": 118
+    },
+    "Guyana": {
+      "viirs_modis_ratio": 4.9189,
+      "overlap_months": 155
+    },
+    "Panama": {
+      "viirs_modis_ratio": 4.9412,
+      "overlap_months": 149
+    },
+    "Paraguay": {
+      "viirs_modis_ratio": 3.3685,
+      "overlap_months": 156
+    },
+    "Peru": {
+      "viirs_modis_ratio": 5.6817,
+      "overlap_months": 156
+    },
+    "Saint Lucia": {
+      "viirs_modis_ratio": 6.0,
+      "overlap_months": 6
+    },
+    "Saint Vincent and the Grenadines": {
+      "viirs_modis_ratio": 3.0,
+      "overlap_months": 7
+    },
+    "Suriname": {
+      "viirs_modis_ratio": 4.6023,
+      "overlap_months": 142
+    },
+    "Trinidad and Tobago": {
+      "viirs_modis_ratio": 11.1923,
+      "overlap_months": 149
+    },
+    "Uruguay": {
+      "viirs_modis_ratio": 2.963,
+      "overlap_months": 156
+    },
+    "Venezuela": {
+      "viirs_modis_ratio": 4.1214,
+      "overlap_months": 156
+    }
+  },
+  "countries": [
+    {
+      "country": "Brazil",
+      "iso": "UNK",
+      "slug": "brazil",
+      "total_detections": 28091847,
+      "date_range": {
+        "start": "2000-11-01",
+        "end": "2024-12-31"
+      },
+      "has_harmonization": true,
+      "sources": [
+        "MODIS_SP",
+        "VIIRS_SNPP_SP"
+      ]
+    },
+    {
+      "country": "Bolivia",
+      "iso": "UNK",
+      "slug": "bolivia",
+      "total_detections": 5508306,
+      "date_range": {
+        "start": "2000-11-01",
+        "end": "2024-12-31"
+      },
+      "has_harmonization": true,
+      "sources": [
+        "MODIS_SP",
+        "VIIRS_SNPP_SP"
+      ]
+    },
+    {
+      "country": "Venezuela",
+      "iso": "UNK",
+      "slug": "venezuela",
+      "total_detections": 4660001,
+      "date_range": {
+        "start": "2000-11-01",
+        "end": "2024-12-31"
+      },
+      "has_harmonization": true,
+      "sources": [
+        "MODIS_SP",
+        "VIIRS_SNPP_SP"
+      ]
+    },
+    {
+      "country": "Argentina",
+      "iso": "UNK",
+      "slug": "argentina",
+      "total_detections": 4381561,
+      "date_range": {
+        "start": "2000-11-01",
+        "end": "2024-12-31"
+      },
+      "has_harmonization": true,
+      "sources": [
+        "MODIS_SP",
+        "VIIRS_SNPP_SP"
+      ]
+    },
+    {
+      "country": "Paraguay",
+      "iso": "UNK",
+      "slug": "paraguay",
+      "total_detections": 2814313,
+      "date_range": {
+        "start": "2000-11-01",
+        "end": "2024-12-31"
+      },
+      "has_harmonization": true,
+      "sources": [
+        "MODIS_SP",
+        "VIIRS_SNPP_SP"
+      ]
+    },
+    {
+      "country": "Colombia",
+      "iso": "UNK",
+      "slug": "colombia",
+      "total_detections": 2131854,
+      "date_range": {
+        "start": "2000-11-01",
+        "end": "2024-12-31"
+      },
+      "has_harmonization": true,
+      "sources": [
+        "MODIS_SP",
+        "VIIRS_SNPP_SP"
+      ]
+    },
+    {
+      "country": "Peru",
+      "iso": "UNK",
+      "slug": "peru",
+      "total_detections": 1343495,
+      "date_range": {
+        "start": "2000-11-01",
+        "end": "2024-12-31"
+      },
+      "has_harmonization": true,
+      "sources": [
+        "MODIS_SP",
+        "VIIRS_SNPP_SP"
+      ]
+    },
+    {
+      "country": "Chile",
+      "iso": "UNK",
+      "slug": "chile",
+      "total_detections": 572805,
+      "date_range": {
+        "start": "2000-11-01",
+        "end": "2024-12-31"
+      },
+      "has_harmonization": true,
+      "sources": [
+        "MODIS_SP",
+        "VIIRS_SNPP_SP"
+      ]
+    },
+    {
+      "country": "Ecuador",
+      "iso": "UNK",
+      "slug": "ecuador",
+      "total_detections": 302013,
+      "date_range": {
+        "start": "2000-11-01",
+        "end": "2024-12-31"
+      },
+      "has_harmonization": true,
+      "sources": [
+        "MODIS_SP",
+        "VIIRS_SNPP_SP"
+      ]
+    },
+    {
+      "country": "Guyana",
+      "iso": "UNK",
+      "slug": "guyana",
+      "total_detections": 187647,
+      "date_range": {
+        "start": "2000-11-01",
+        "end": "2024-12-31"
+      },
+      "has_harmonization": true,
+      "sources": [
+        "MODIS_SP",
+        "VIIRS_SNPP_SP"
+      ]
+    },
+    {
+      "country": "Panama",
+      "iso": "UNK",
+      "slug": "panama",
+      "total_detections": 157530,
+      "date_range": {
+        "start": "2000-12-23",
+        "end": "2024-12-17"
+      },
+      "has_harmonization": true,
+      "sources": [
+        "MODIS_SP",
+        "VIIRS_SNPP_SP"
+      ]
+    },
+    {
+      "country": "Uruguay",
+      "iso": "UNK",
+      "slug": "uruguay",
+      "total_detections": 69307,
+      "date_range": {
+        "start": "2000-11-02",
+        "end": "2024-12-31"
+      },
+      "has_harmonization": true,
+      "sources": [
+        "MODIS_SP",
+        "VIIRS_SNPP_SP"
+      ]
+    },
+    {
+      "country": "Suriname",
+      "iso": "UNK",
+      "slug": "suriname",
+      "total_detections": 58017,
+      "date_range": {
+        "start": "2000-11-01",
+        "end": "2024-12-31"
+      },
+      "has_harmonization": true,
+      "sources": [
+        "MODIS_SP",
+        "VIIRS_SNPP_SP"
+      ]
+    },
+    {
+      "country": "France",
+      "iso": "UNK",
+      "slug": "france",
+      "total_detections": 25902,
+      "date_range": {
+        "start": "2000-11-01",
+        "end": "2024-12-17"
+      },
+      "has_harmonization": true,
+      "sources": [
+        "MODIS_SP",
+        "VIIRS_SNPP_SP"
+      ]
+    },
+    {
+      "country": "Trinidad and Tobago",
+      "iso": "UNK",
+      "slug": "trinidad_and_tobago",
+      "total_detections": 19874,
+      "date_range": {
+        "start": "2000-11-24",
+        "end": "2024-12-30"
+      },
+      "has_harmonization": true,
+      "sources": [
+        "MODIS_SP",
+        "VIIRS_SNPP_SP"
+      ]
+    },
+    {
+      "country": "Falkland Islands",
+      "iso": "UNK",
+      "slug": "falkland_islands",
+      "total_detections": 1959,
+      "date_range": {
+        "start": "2001-03-28",
+        "end": "2024-03-10"
+      },
+      "has_harmonization": true,
+      "sources": [
+        "MODIS_SP",
+        "VIIRS_SNPP_SP"
+      ]
+    },
+    {
+      "country": "Cura\u00e7ao",
+      "iso": "UNK",
+      "slug": "cura\u00e7ao",
+      "total_detections": 1404,
+      "date_range": {
+        "start": "2000-12-15",
+        "end": "2024-11-25"
+      },
+      "has_harmonization": true,
+      "sources": [
+        "MODIS_SP",
+        "VIIRS_SNPP_SP"
+      ]
+    },
+    {
+      "country": "Barbados",
+      "iso": "UNK",
+      "slug": "barbados",
+      "total_detections": 1253,
+      "date_range": {
+        "start": "2001-03-11",
+        "end": "2024-12-19"
+      },
+      "has_harmonization": true,
+      "sources": [
+        "MODIS_SP",
+        "VIIRS_SNPP_SP"
+      ]
+    },
+    {
+      "country": "Saint Lucia",
+      "iso": "UNK",
+      "slug": "saint_lucia",
+      "total_detections": 245,
+      "date_range": {
+        "start": "2001-04-26",
+        "end": "2024-12-30"
+      },
+      "has_harmonization": true,
+      "sources": [
+        "MODIS_SP",
+        "VIIRS_SNPP_SP"
+      ]
+    },
+    {
+      "country": "Saint Vincent and the Grenadines",
+      "iso": "UNK",
+      "slug": "saint_vincent_and_the_grenadines",
+      "total_detections": 220,
+      "date_range": {
+        "start": "2002-06-02",
+        "end": "2024-12-04"
+      },
+      "has_harmonization": true,
+      "sources": [
+        "MODIS_SP",
+        "VIIRS_SNPP_SP"
+      ]
+    },
+    {
+      "country": "Grenada",
+      "iso": "UNK",
+      "slug": "grenada",
+      "total_detections": 91,
+      "date_range": {
+        "start": "2003-03-26",
+        "end": "2024-10-12"
+      },
+      "has_harmonization": false,
+      "sources": [
+        "MODIS_SP",
+        "VIIRS_SNPP_SP"
+      ]
+    },
+    {
+      "country": "Netherlands",
+      "iso": "UNK",
+      "slug": "netherlands",
+      "total_detections": 60,
+      "date_range": {
+        "start": "2006-04-06",
+        "end": "2024-11-25"
+      },
+      "has_harmonization": false,
+      "sources": [
+        "MODIS_SP",
+        "VIIRS_SNPP_SP"
+      ]
+    },
+    {
+      "country": "Aruba",
+      "iso": "UNK",
+      "slug": "aruba",
+      "total_detections": 55,
+      "date_range": {
+        "start": "2002-06-28",
+        "end": "2024-06-25"
+      },
+      "has_harmonization": false,
+      "sources": [
+        "MODIS_SP",
+        "VIIRS_SNPP_SP"
+      ]
+    }
+  ]
+}
