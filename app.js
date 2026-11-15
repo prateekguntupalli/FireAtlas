@@ -1604,39 +1604,56 @@ async function loadCountryBoundaries() {
 
 // ── Heatgrid ──
 async function loadHeatgrid() {
+  // Show loading overlay on the map
+  const mapEl = document.getElementById("map");
+  const overlay = document.createElement("div");
+  overlay.id = "heatgrid-loading";
+  overlay.innerHTML = '<div class="heatgrid-spinner"></div><span>Loading heatgrid data…</span>';
+  mapEl.style.position = "relative";
+  mapEl.appendChild(overlay);
+
   try {
     const cacheBust = "?v=" + Date.now();
     const NUM_CHUNKS = 4;
-    let allCells = [];
-    let years = null;
-    let numYears = 0;
-    let loaded = 0;
 
+    // Fetch all chunks in parallel
+    const fetches = [];
     for (let i = 0; i < NUM_CHUNKS; i++) {
-      let res = await fetch(`processed_data/heatgrid_${i}.json${cacheBust}`);
-      if (!res.ok) res = await fetch(`heatgrid_${i}.json${cacheBust}`);
-      if (!res.ok) {
-        console.warn(`Heatgrid chunk ${i} not found, trying single file fallback`);
-        let fb = await fetch("processed_data/heatgrid.json" + cacheBust);
-        if (!fb.ok) fb = await fetch("heatgrid.json" + cacheBust);
-        if (!fb.ok) { console.warn("No heatgrid found"); return; }
-        heatgridData = await fb.json();
-        console.log(`Heatgrid loaded (single): ${heatgridData.cells.length.toLocaleString()} cells`);
-        renderHeatgrid();
-        return;
-      }
-      const chunk = await res.json();
-      if (!years) { years = chunk.years; numYears = chunk.num_years; }
+      fetches.push(
+        fetch(`processed_data/heatgrid_${i}.json${cacheBust}`)
+          .then(r => r.ok ? r.json() : fetch(`heatgrid_${i}.json${cacheBust}`).then(r2 => r2.ok ? r2.json() : null))
+      );
+    }
+
+    const chunks = await Promise.all(fetches);
+
+    // Check if any chunk failed — fall back to single file
+    if (chunks.some(c => c === null)) {
+      console.warn("Some heatgrid chunks missing, trying single file fallback");
+      let fb = await fetch("processed_data/heatgrid.json" + cacheBust);
+      if (!fb.ok) fb = await fetch("heatgrid.json" + cacheBust);
+      if (!fb.ok) { console.warn("No heatgrid found"); overlay.remove(); return; }
+      heatgridData = await fb.json();
+      overlay.remove();
+      renderHeatgrid();
+      return;
+    }
+
+    // Merge all chunks
+    let allCells = [];
+    const years = chunks[0].years;
+    const numYears = chunks[0].num_years;
+    for (const chunk of chunks) {
       allCells = allCells.concat(chunk.cells);
-      loaded++;
-      console.log(`Heatgrid chunk ${i}: ${chunk.cells.length.toLocaleString()} cells`);
     }
 
     heatgridData = { years, num_years: numYears, cells: allCells };
-    console.log(`Heatgrid loaded: ${allCells.length.toLocaleString()} cells across ${loaded} chunks`);
+    console.log(`Heatgrid loaded: ${allCells.length.toLocaleString()} cells across ${chunks.length} chunks`);
+    overlay.remove();
     renderHeatgrid();
   } catch (e) {
     console.error("Could not load heatgrid:", e);
+    overlay.remove();
   }
 }
 
