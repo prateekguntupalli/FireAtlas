@@ -233,6 +233,7 @@ let currentCountry = "brazil";
 let currentYear = 2024;
 let currentMode = "raw"; // 'raw' or 'harmonized'
 let highConfOnly = false;
+let heatgridVisible = true;
 let map = null;
 let heatgridData = null;
 let heatgridLayer = null;
@@ -424,6 +425,19 @@ function toggleConfFilter() {
   renderSeasonality();
   renderAnomalies();
   renderHeatgrid();
+}
+
+function toggleHeatgridVisibility() {
+  heatgridVisible = !heatgridVisible;
+  const btn = document.getElementById('heatgrid-toggle-btn');
+  btn.classList.toggle('active', heatgridVisible);
+  if (heatgridLayer) {
+    if (heatgridVisible) {
+      map.addLayer(heatgridLayer);
+    } else {
+      map.removeLayer(heatgridLayer);
+    }
+  }
 }
 
 // ── Stats ──
@@ -1843,7 +1857,9 @@ function renderHeatgrid() {
   });
 
   heatgridLayer = new CanvasHeatgrid();
-  heatgridLayer.addTo(map);
+  if (heatgridVisible) {
+    heatgridLayer.addTo(map);
+  }
 
   // Keep country boundaries above heatgrid so clicks work
   if (countryLayer) countryLayer.bringToFront();
