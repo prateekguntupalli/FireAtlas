@@ -1931,28 +1931,61 @@ function downloadCSV() {
   const hc = highConfOnly;
   const yearPrefix = String(currentYear);
 
-  // Header reflects current settings
   const confLabel = hc ? "high_conf" : "all_conf";
   const modeLabel = isHarm ? "harmonized" : "raw";
-  let csv = `date,modis,viirs,total\n`;
+
+  // Build columns based on active filters
+  let cols = ["date", "modis", "viirs", "total"];
+  if (hc) cols.push("modis_high_conf", "viirs_high_conf", "total_high_conf");
+  if (isHarm) cols.push("modis_harmonized", "total_harmonized", "harmonization_ratio");
+  cols.push("modis_avg_frp_mw", "viirs_avg_frp_mw", "modis_pct", "viirs_pct");
+  let csv = cols.join(",") + "\n";
 
   Object.keys(daily)
     .sort()
     .filter((date) => date.startsWith(yearPrefix))
     .forEach((date) => {
       const d = daily[date];
-      // Pick count based on confidence filter
-      let modis = hc ? (d.MODIS_SP?.high_conf || 0) : (d.MODIS_SP?.count || 0);
-      let viirs = hc ? (d.VIIRS_SNPP_SP?.high_conf || 0) : (d.VIIRS_SNPP_SP?.count || 0);
+      const mSrc = d.MODIS_SP || {};
+      const vSrc = d.VIIRS_SNPP_SP || {};
 
-      // Apply harmonization if needed
-      if (isHarm) {
-        modis = Math.round(modis * ratio);
+      const modisRaw = mSrc.count || 0;
+      const viirsRaw = vSrc.count || 0;
+      const totalRaw = modisRaw + viirsRaw;
+
+      const modisFrp = mSrc.avg_frp ? mSrc.avg_frp.toFixed(1) : "";
+      const viirsFrp = vSrc.avg_frp ? vSrc.avg_frp.toFixed(1) : "";
+      const modisPct = totalRaw > 0 ? ((modisRaw / totalRaw) * 100).toFixed(1) : "0.0";
+      const viirsPct = totalRaw > 0 ? ((viirsRaw / totalRaw) * 100).toFixed(1) : "0.0";
+
+      let vals = [date, modisRaw, viirsRaw, totalRaw];
+
+      if (hc) {
+        const modisHC = mSrc.high_conf || 0;
+        const viirsHC = vSrc.high_conf || 0;
+        vals.push(modisHC, viirsHC, modisHC + viirsHC);
       }
 
-      const total = modis + viirs;
-      csv += `${date},${modis},${viirs},${total}\n`;
+      if (isHarm) {
+        const modisH = Math.round(modisRaw * ratio);
+        vals.push(modisH, modisH + viirsRaw, ratio.toFixed(2));
+      }
+
+      vals.push(modisFrp, viirsFrp, modisPct, viirsPct);
+      csv += vals.join(",") + "\n";
     });
+
+  // Metadata footer
+  csv += "\n";
+  csv += "# FireAtlas Export Metadata\n";
+  csv += `# Country: ${currentCountry}\n`;
+  csv += `# Year: ${currentYear}\n`;
+  csv += `# Mode: ${modeLabel}\n`;
+  csv += `# Confidence filter: ${confLabel}\n`;
+  csv += `# Harmonization ratio (VIIRS/MODIS): ${ratio.toFixed(4)}\n`;
+  csv += "# MODIS: Terra + Aqua (1km resolution)\n";
+  csv += "# VIIRS: Suomi NPP (375m resolution)\n";
+  csv += "# Data source: NASA FIRMS\n";
 
   const blob = new Blob([csv], { type: "text/csv" });
   const url = URL.createObjectURL(blob);
