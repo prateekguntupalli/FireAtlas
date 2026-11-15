@@ -1630,12 +1630,12 @@ async function loadHeatgrid() {
     const cacheBust = "?v=" + Date.now();
     const NUM_CHUNKS = 4;
 
-    // Fetch all chunks in parallel
+    // Fetch all chunks in parallel (no cache bust — these files are static)
     const fetches = [];
     for (let i = 0; i < NUM_CHUNKS; i++) {
       fetches.push(
-        fetch(`processed_data/heatgrid_${i}.json${cacheBust}`)
-          .then(r => r.ok ? r.json() : fetch(`heatgrid_${i}.json${cacheBust}`).then(r2 => r2.ok ? r2.json() : null))
+        fetch(`processed_data/heatgrid_${i}.json`)
+          .then(r => r.ok ? r.json() : fetch(`heatgrid_${i}.json`).then(r2 => r2.ok ? r2.json() : null))
       );
     }
 
