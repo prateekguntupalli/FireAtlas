@@ -1,13 +1,3 @@
-#!/usr/bin/env python3
-"""
-FireAtlas FIRMS Data Parser v2 — Memory-efficient version
-Processes one source/region at a time to stay under 8GB RAM.
-
-Usage:
-    pip install pandas geopandas shapely
-    python parse_firms_v2.py --raw-data ./raw_data --geojson ./countries.geojson --output ./processed_data
-"""
-
 import argparse
 import json
 import os
@@ -229,23 +219,25 @@ def export_data(all_records, output_dir):
             yearly[yr][r["sensor"]] += r["count"]
         yearly_dict = {yr: dict(sensors) for yr, sensors in yearly.items()}
 
-        # Harmonization: VIIRS/MODIS monthly ratio for overlap period
+        # Harmonization: overall VIIRS/MODIS ratio across overlap period
         h = None
-        overlap_ratios = []
+        total_modis_overlap = 0
+        total_viirs_overlap = 0
+        overlap_months = 0
         for month, sensors in monthly_dict.items():
             if "MODIS" in sensors and "VIIRS" in sensors:
                 mc = sensors["MODIS"]["count"]
                 vc = sensors["VIIRS"]["count"]
                 if mc > 0 and vc > 0:
-                    overlap_ratios.append(vc / mc)
+                    total_modis_overlap += mc
+                    total_viirs_overlap += vc
+                    overlap_months += 1
 
-        if len(overlap_ratios) >= 6:
-            overlap_ratios.sort()
-            median_idx = len(overlap_ratios) // 2
-            ratio = overlap_ratios[median_idx]
+        if overlap_months >= 6 and total_modis_overlap > 0:
+            ratio = total_viirs_overlap / total_modis_overlap
             h = {
                 "viirs_modis_ratio": round(ratio, 4),
-                "overlap_months": len(overlap_ratios),
+                "overlap_months": overlap_months,
             }
             harmonization[country] = h
 

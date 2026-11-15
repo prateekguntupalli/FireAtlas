@@ -1,46 +1,37 @@
+
 import os
 import sys
-import time
 import ssl
+import time
 import urllib.request
 import urllib.error
 from datetime import datetime, timedelta
+from concurrent.futures import ThreadPoolExecutor, as_completed
+import threading
 
-# Bypass SSL verification (FIRMS cert chain issue)
 SSL_CTX = ssl.create_default_context()
 SSL_CTX.check_hostname = False
 SSL_CTX.verify_mode = ssl.CERT_NONE
 
-MAP_KEY = "3239081b0a89816bb9b3351cffa69820"
+MAP_KEY = "4f1b8a713ade0187ff306cc0af756769"
 BASE_URL = "https://firms.modaps.eosdis.nasa.gov/api/area/csv"
 
-# ── Sources and date ranges ──────────────────────────────────
+THREADS = 40
+CHUNK_DAYS = 5
+
 SOURCES = {
     "MODIS_SP": {
         "start": datetime(2000, 11, 1),
         "end": datetime(2024, 12, 31),
-        "label": "MODIS (Standard)"
+        "label": "MODIS (Standard)",
     },
     "VIIRS_SNPP_SP": {
         "start": datetime(2012, 1, 20),
         "end": datetime(2024, 12, 31),
-        "label": "VIIRS S-NPP (Standard)"
-    },
-    "VIIRS_NOAA20_NRT": {
-        "start": datetime(2020, 1, 1),
-        "end": datetime(2024, 12, 31),
-        "label": "VIIRS NOAA-20"
-    },
-    "VIIRS_NOAA21_NRT": {
-        "start": datetime(2023, 3, 1),
-        "end": datetime(2024, 12, 31),
-        "label": "VIIRS NOAA-21"
+        "label": "VIIRS S-NPP (Standard)",
     },
 }
 
-# ── World regions as bounding boxes ──────────────────────────
-# Split the world into manageable regions to avoid massive responses.
-# Format: "west,south,east,north"
 REGIONS = {
     # South America (split into 2 — huge fire activity)
     "SAM_N": {"bbox": "-82,-5,-34,15", "label": "South America North"},
@@ -72,136 +63,72 @@ REGIONS = {
     "OCE": {"bbox": "110,-50,180,-10", "label": "Oceania"},
 }
 
-CHUNK_DAYS = 5  # API max is 5 for area queries
 OUTPUT_DIR = "raw_data"
-DELAY = 0.2  # seconds between requests
 
-transaction_count = 0
-window_start = time.time()
-
-
-def rate_limit():
-    global transaction_count, window_start
-    elapsed = time.time() - window_start
-    if elapsed > 600:
-        transaction_count = 0
-        window_start = time.time()
-        return
-    if transaction_count >= 4000:
-        wait_time = 600 - elapsed + 5
-        print(f"\n⏳ Rate limit approaching. Waiting {wait_time:.0f}s...")
-        time.sleep(wait_time)
-        transaction_count = 0
-        window_start = time.time()
+lock = threading.Lock()
+completed_count = 0
+total_records = 0
+error_count = 0
+skipped_count = 0
 
 
-def download_chunk(source, bbox, date_str, day_range, output_path):
-    global transaction_count
+def download_chunk(source, bbox, date_str, day_range, output_path, region_key, total_chunks):
+    global completed_count, total_records, error_count, skipped_count
 
     url = f"{BASE_URL}/{MAP_KEY}/{source}/{bbox}/{day_range}/{date_str}"
 
     try:
-        rate_limit()
         req = urllib.request.Request(url)
         req.add_header('User-Agent', 'FireAtlas-Hackathon/1.0')
 
         with urllib.request.urlopen(req, timeout=300, context=SSL_CTX) as response:
             data = response.read().decode('utf-8', errors='replace')
 
-        transaction_count += day_range
-
-        # Check for errors
         if len(data) < 500 and ('error' in data.lower() or 'invalid' in data.lower()):
-            print(f" ERR: {data.strip()[:100]}")
-            return 0
+            with lock:
+                error_count += 1
+                completed_count += 1
+                pct = (completed_count / total_chunks) * 100
+            print(f"\r  [{pct:5.1f}%] {region_key} {source} {date_str} ERR: {data.strip()[:80]}", flush=True)
+            return
 
         lines = data.strip().split('\n')
         num_records = len(lines) - 1
 
         if num_records <= 0:
-            # Write header-only marker so we know we tried
             with open(output_path, 'w') as f:
                 f.write("NO_DATA")
-            return 0
+        else:
+            with open(output_path, 'w') as f:
+                f.write(data)
 
-        with open(output_path, 'w') as f:
-            f.write(data)
-
-        return num_records
+        with lock:
+            completed_count += 1
+            total_records += max(0, num_records)
+            pct = (completed_count / total_chunks) * 100
+        print(f"\r  [{pct:5.1f}%] {region_key} {source} {date_str} — {max(0, num_records):,} detections", end="", flush=True)
 
     except urllib.error.HTTPError as e:
-        if e.code == 429:
-            print(f"\n⏳ Rate limited (429). Waiting 120s...")
-            time.sleep(120)
-            transaction_count = 0
-            window_start = time.time()
-            return download_chunk(source, bbox, date_str, day_range, output_path)
         body = ""
         try:
             body = e.read().decode('utf-8', errors='replace')[:200]
         except:
             pass
-        print(f" HTTP {e.code}: {body}")
-        return -1
+        with lock:
+            error_count += 1
+            completed_count += 1
+        print(f"\n  HTTP {e.code}: {region_key} {source} {date_str} — {body[:80]}", flush=True)
+
     except Exception as e:
-        print(f" Error: {e}")
-        return -1
-
-
-def download_region_source(source_key, source_config, region_key, region_config):
-    folder = os.path.join(OUTPUT_DIR, source_key, region_key)
-    os.makedirs(folder, exist_ok=True)
-
-    bbox = region_config["bbox"]
-    start = source_config["start"]
-    end = source_config["end"]
-    current = start
-    total_records = 0
-    chunks_done = 0
-    errors = 0
-
-    total_days = (end - start).days
-    total_chunks = (total_days // CHUNK_DAYS) + 1
-
-    while current <= end:
-        remaining = (end - current).days + 1
-        day_range = min(CHUNK_DAYS, remaining)
-        date_str = current.strftime("%Y-%m-%d")
-
-        filename = f"{date_str}.csv"
-        output_path = os.path.join(folder, filename)
-
-        # Skip if already downloaded (but not empty markers from failed runs)
-        if os.path.exists(output_path):
-            with open(output_path, 'r') as f:
-                first = f.read(10)
-            if first and first != "NO_DATA":
-                current += timedelta(days=day_range)
-                chunks_done += 1
-                continue
-
-        chunks_done += 1
-        pct = (chunks_done / total_chunks) * 100
-        print(f"\r  [{pct:5.1f}%] {region_key} {source_key} {date_str}", end="", flush=True)
-
-        result = download_chunk(source_key, bbox, date_str, day_range, output_path)
-
-        if result < 0:
-            errors += 1
-            if errors > 10:
-                print(f"\n  Too many errors for {region_key}/{source_key}, skipping rest")
-                return total_records, errors
-        else:
-            total_records += result
-
-        current += timedelta(days=day_range)
-        time.sleep(DELAY)
-
-    print(f"\r  ✓ {region_key} {source_key}: {total_records:,} detections ({chunks_done} chunks, {errors} errors)     ")
-    return total_records, errors
+        with lock:
+            error_count += 1
+            completed_count += 1
+        print(f"\n  Error: {region_key} {source} {date_str} — {e}", flush=True)
 
 
 def main():
+    global completed_count, total_records, error_count, skipped_count
+
     regions = dict(REGIONS)
     sources = dict(SOURCES)
 
@@ -229,10 +156,9 @@ def main():
                 i += 2
             elif sys.argv[i] == "--help":
                 print("Usage:")
-                print("  python download_firms.py                          # All regions + sensors")
-                print("  python download_firms.py --region SAM_N           # One region")
-                print("  python download_firms.py --source MODIS_SP        # One sensor")
-                print("  python download_firms.py --region SAM_S --source VIIRS_SNPP_SP")
+                print("  python3 fast_downloader.py                          # All regions + sensors")
+                print("  python3 fast_downloader.py --region SAM_N           # One region")
+                print("  python3 fast_downloader.py --source MODIS_SP        # One sensor")
                 print()
                 print("Regions:", ", ".join(REGIONS.keys()))
                 print("Sources:", ", ".join(SOURCES.keys()))
@@ -241,27 +167,16 @@ def main():
                 i += 1
 
     print("=" * 60)
-    print("FireAtlas — FIRMS Data Downloader")
+    print("FireAtlas — Fast FIRMS Downloader (40 threads)")
     print("=" * 60)
     print(f"Regions: {len(regions)}")
     print(f"Sources: {len(sources)}")
     print(f"Output: {OUTPUT_DIR}/")
     print()
 
-    total_requests = 0
-    for s in sources.values():
-        days = (s["end"] - s["start"]).days
-        chunks = (days // CHUNK_DAYS) + 1
-        total_requests += chunks * len(regions)
-
-    est_minutes = total_requests * DELAY / 60
-    print(f"Estimated requests: ~{total_requests:,}")
-    print(f"Estimated time: ~{est_minutes:.0f} minutes ({est_minutes / 60:.1f} hours)")
-    print()
-
     for key, cfg in sources.items():
         days = (cfg["end"] - cfg["start"]).days
-        print(f"  {cfg['label']}: {cfg['start'].strftime('%Y-%m-%d')} → {cfg['end'].strftime('%Y-%m-%d')} ({days} days)")
+        print(f"  {cfg['label']}: {cfg['start'].strftime('%Y-%m-%d')} -> {cfg['end'].strftime('%Y-%m-%d')} ({days} days)")
     print()
 
     for key, cfg in regions.items():
@@ -272,20 +187,85 @@ def main():
 
     os.makedirs(OUTPUT_DIR, exist_ok=True)
     start_time = time.time()
-    grand_total = 0
+    region_num = 0
 
-    for ri, (region_key, region_config) in enumerate(regions.items()):
-        print(f"\n[{ri + 1}/{len(regions)}] === {region_config['label']} ===")
-        for source_key, source_config in sources.items():
-            records, _ = download_region_source(source_key, source_config, region_key, region_config)
-            grand_total += records
+    try:
+        for region_key, region_config in regions.items():
+            region_num += 1
+            bbox = region_config["bbox"]
+            label = region_config["label"]
+
+            # Build tasks for THIS region only
+            region_tasks = []
+            region_skipped = 0
+            for source_key, source_config in sources.items():
+                current = source_config["start"]
+                end = source_config["end"]
+                while current <= end:
+                    remaining = (end - current).days + 1
+                    day_range = min(CHUNK_DAYS, remaining)
+                    date_str = current.strftime("%Y-%m-%d")
+
+                    folder = os.path.join(OUTPUT_DIR, source_key, region_key)
+                    output_path = os.path.join(folder, f"{date_str}.csv")
+
+                    skip = False
+                    if os.path.exists(output_path):
+                        try:
+                            if os.path.getsize(output_path) > 10:
+                                with open(output_path, 'r') as f:
+                                    first = f.read(10)
+                                if first and first != "NO_DATA":
+                                    skip = True
+                                    region_skipped += 1
+                                    skipped_count += 1
+                        except:
+                            pass
+
+                    if not skip:
+                        os.makedirs(folder, exist_ok=True)
+                        region_tasks.append((source_key, bbox, date_str, day_range, output_path, region_key))
+
+                    current += timedelta(days=day_range)
+
+            total_for_region = len(region_tasks) + region_skipped
+            print(f"\n[{region_num}/{len(regions)}] === {label} ({region_key}) === {len(region_tasks)} to download, {region_skipped} skipped")
+
+            if len(region_tasks) == 0:
+                print(f"  ✓ Already complete!")
+                continue
+
+            region_start = completed_count
+            region_total = len(region_tasks)
+
+            with ThreadPoolExecutor(max_workers=THREADS) as pool:
+                futures = []
+                for task in region_tasks:
+                    source_key, bbox, date_str, day_range, output_path, rk = task
+                    futures.append(
+                        pool.submit(download_chunk, source_key, bbox, date_str, day_range, output_path, rk, region_total)
+                    )
+
+                for f in as_completed(futures):
+                    pass
+
+            region_done = completed_count - region_start
+            print(f"\n  ✓ {label} done — {region_done} chunks downloaded")
+
+    except KeyboardInterrupt:
+        print(f"\n\nStopped by user.")
 
     elapsed = time.time() - start_time
     print(f"\n{'=' * 60}")
-    print(f"Done! {grand_total:,} total detections downloaded")
+    print(f"Done! {total_records:,} total detections downloaded")
+    print(f"New chunks downloaded: {completed_count}")
+    print(f"Previously skipped: {skipped_count:,}")
+    print(f"Errors: {error_count}")
     print(f"Time: {elapsed / 60:.1f} minutes")
     print(f"Data: {OUTPUT_DIR}/")
     print(f"{'=' * 60}")
+    if error_count > 0:
+        print(f"\nGot errors? Wait ~10 min and rerun — it skips completed files.")
 
 
 if __name__ == "__main__":

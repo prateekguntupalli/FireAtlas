@@ -55,6 +55,85 @@ body {
   overflow-x: hidden;
 }
 
+
+/* ═══ LANDING NAV ═══ */
+.landing-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 99;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 48px;
+  height: 56px;
+  background: rgba(12, 14, 20, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  transition: background 0.3s ease;
+}
+
+.landing-nav.scrolled {
+  background: rgba(12, 14, 20, 0.95);
+}
+
+.nav-logo {
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--white);
+  letter-spacing: -0.01em;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.nav-links a {
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--slate-400);
+  text-decoration: none;
+  padding: 6px 14px;
+  border-radius: 100px;
+  transition: color 0.2s, background 0.2s;
+}
+
+.nav-links a:hover {
+  color: var(--white);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.nav-links .nav-cta {
+  color: var(--white);
+  background: var(--ember-500);
+  margin-left: 8px;
+  font-family: var(--font-display);
+  font-weight: 600;
+}
+
+.nav-links .nav-cta:hover {
+  background: var(--ember-400);
+}
+
+@media (max-width: 768px) {
+  .landing-nav {
+    padding: 0 20px;
+  }
+
+  .nav-links a:not(.nav-cta) {
+    display: none;
+  }
+}
+
 /* ── HERO ────────────────────────────────── */
 .hero {
   position: relative;
@@ -634,7 +713,7 @@ body {
   padding: 24px 80px;
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
 }
 
 .footer-text {
@@ -920,5 +999,131 @@ body {
 @media (max-width: 768px) {
   .explore-section .section > div:last-child {
     grid-template-columns: 1fr !important;
+  }
+}
+
+
+/* ═══ HOW TO USE SECTION ═══ */
+.howto-section {
+  background: var(--white);
+}
+
+.howto-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin-top: 32px;
+  border-left: 2px solid var(--slate-200);
+  margin-left: 20px;
+}
+
+.howto-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+  padding: 24px 0 24px 28px;
+  position: relative;
+}
+
+.howto-step:not(:last-child) {
+  border-bottom: 1px solid var(--slate-100);
+}
+
+.howto-number {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--ember-500);
+  color: var(--white);
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  position: relative;
+  left: -49px;
+  margin-right: -29px;
+}
+
+.howto-body h3 {
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: var(--slate-900);
+}
+
+.howto-body p {
+  font-size: 14px;
+  color: var(--slate-500);
+  line-height: 1.6;
+  max-width: 600px;
+}
+
+/* ═══ KEY INSIGHTS SECTION ═══ */
+.insights-section {
+  background: var(--slate-50);
+}
+
+.insights-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  margin-top: 32px;
+}
+
+.insight-card {
+  background: var(--white);
+  border: 1px solid var(--slate-200);
+  border-radius: 16px;
+  padding: 28px;
+  transition: border-color 0.2s;
+}
+
+.insight-card:hover {
+  border-color: var(--slate-300);
+}
+
+.insight-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.insight-card h3 {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--slate-900);
+}
+
+.insight-card p {
+  font-size: 13px;
+  color: var(--slate-500);
+  line-height: 1.6;
+}
+
+@media (max-width: 768px) {
+  .insights-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .howto-steps {
+    margin-left: 16px;
+  }
+
+  .howto-number {
+    left: -37px;
+    margin-right: -21px;
+    width: 32px;
+    height: 32px;
+    font-size: 14px;
   }
 }

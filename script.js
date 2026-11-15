@@ -634,3 +634,16 @@
     setTimeout(() => requestAnimationFrame(step), 400);
   });
 })();
+
+
+// ═══ NAV SCROLL BEHAVIOR ═══
+const landingNav = document.getElementById('landing-nav');
+if (landingNav) {
+  window.addEventListener('scroll', () => {
+    if (window.scrollY > 60) {
+      landingNav.classList.add('scrolled');
+    } else {
+      landingNav.classList.remove('scrolled');
+    }
+  });
+}

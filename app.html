@@ -1,0 +1,352 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FireAtlas — Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=DM+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+    <link rel="stylesheet" href="app.css" />
+  </head>
+  <body>
+    <!-- ═══ TOP BAR ═══ -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <a href="index.html" class="logo">
+          <span class="logo-icon">🔥</span>
+          <span class="logo-text"
+            >Fire<span class="logo-accent">Atlas</span></span
+          >
+        </a>
+      </div>
+      <div class="topbar-right">
+        <select id="country-select" style="display: none"></select>
+      </div>
+    </header>
+
+    <!-- ═══ MAIN CONTENT ═══ -->
+    <main class="dashboard-main">
+      <!-- Hero: Fire Density Map -->
+      <section class="panel map-panel map-hero">
+        <div class="panel-header">
+          <h2 id="map-title">Fire Density Map</h2>
+        </div>
+        <div id="map"></div>
+      </section>
+
+      <!-- Data bar: toggle + stats (below map) -->
+      <section class="data-bar">
+        <div class="data-bar-toggle">
+          <div class="toggle-group">
+            <button
+              class="toggle-btn active"
+              id="btn-raw"
+              onclick="setMode('raw')"
+            >
+              Raw
+            </button>
+            <button
+              class="toggle-btn"
+              id="btn-harmonized"
+              onclick="setMode('harmonized')"
+            >
+              Harmonized
+            </button>
+          </div>
+          <span class="ratio-label" id="ratio-label"></span>
+        </div>
+        <div class="data-bar-year">
+          <select id="year-select"></select>
+          <button
+            class="conf-chip"
+            id="conf-filter-btn"
+            onclick="toggleConfFilter()"
+          >
+            High Confidence Only
+          </button>
+        </div>
+        <div class="data-bar-stats">
+          <div class="stat-card">
+            <span class="stat-value" id="stat-total">—</span>
+            <span class="stat-label">Total Detections</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-value" id="stat-peak-day">—</span>
+            <span class="stat-label" id="stat-peak-label">Peak Day</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-value" id="stat-avg">—</span>
+            <span class="stat-label">Avg / Day</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-value" id="stat-frp">—</span>
+            <span class="stat-label">Avg Fire Power</span>
+          </div>
+        </div>
+        <div class="data-bar-actions">
+          <button
+            class="download-btn"
+            onclick="downloadCSV()"
+            title="Download data as CSV"
+          >
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path
+                d="M8 1v9m0 0L5 7m3 3 3-3M2 12v1a2 2 0 002 2h8a2 2 0 002-2v-1"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+            CSV
+          </button>
+        </div>
+      </section>
+
+      <!-- Sensor Breakdown + Daily Time Series side by side -->
+      <div class="two-col">
+        <section class="panel sensor-panel">
+          <div class="panel-header">
+            <h2>Sensor Contribution</h2>
+            <span class="panel-subtitle" id="sensor-year-label"></span>
+          </div>
+          <div class="sensor-breakdown" id="sensor-breakdown"></div>
+        </section>
+
+        <section class="panel daily-panel">
+          <div class="panel-header">
+            <h2>Daily Fire Detections</h2>
+            <span class="panel-subtitle" id="daily-subtitle"></span>
+          </div>
+          <canvas id="daily-chart" width="600" height="220"></canvas>
+          <div class="daily-legend">
+            <span class="yearly-legend-item"
+              ><span class="dot modis-dot"></span> MODIS</span
+            >
+            <span class="yearly-legend-item"
+              ><span class="dot viirs-dot"></span> VIIRS</span
+            >
+          </div>
+        </section>
+      </div>
+
+      <!-- Calendar Heatmap -->
+      <section class="panel calendar-panel">
+        <div class="panel-header">
+          <h2>Burning Activity Calendar</h2>
+          <div class="calendar-legend">
+            <span class="legend-label">Less</span>
+            <div class="legend-cells">
+              <span
+                class="legend-cell"
+                style="background: var(--heat-0)"
+              ></span>
+              <span
+                class="legend-cell"
+                style="background: var(--heat-1)"
+              ></span>
+              <span
+                class="legend-cell"
+                style="background: var(--heat-2)"
+              ></span>
+              <span
+                class="legend-cell"
+                style="background: var(--heat-3)"
+              ></span>
+              <span
+                class="legend-cell"
+                style="background: var(--heat-4)"
+              ></span>
+            </div>
+            <span class="legend-label">More</span>
+          </div>
+        </div>
+        <div class="calendar-container" id="calendar-container">
+          <div class="day-labels">
+            <span>Mon</span><span></span><span>Wed</span><span></span
+            ><span>Fri</span><span></span><span>Sun</span>
+          </div>
+          <div class="calendar-grid" id="calendar-grid"></div>
+        </div>
+        <div class="calendar-months" id="calendar-months"></div>
+      </section>
+
+      <!-- Yearly Bar Chart (full width now) -->
+      <section class="panel yearly-panel">
+        <div class="panel-header">
+          <h2>Yearly Detection Counts</h2>
+          <span class="panel-subtitle" id="yearly-subtitle"></span>
+        </div>
+        <div class="yearly-chart" id="yearly-chart"></div>
+        <div class="yearly-legend" id="yearly-legend">
+          <span class="yearly-legend-item"
+            ><span class="dot modis-dot"></span> MODIS (Terra/Aqua)</span
+          >
+          <span class="yearly-legend-item"
+            ><span class="dot viirs-dot"></span> VIIRS (Suomi NPP)</span
+          >
+        </div>
+      </section>
+
+      <!-- Trend Analysis — the money shot -->
+      <section class="panel trend-panel">
+        <div class="panel-header">
+          <h2>25-Year Trend Analysis</h2>
+          <span class="panel-subtitle" id="trend-subtitle"></span>
+        </div>
+        <canvas id="trend-chart" width="900" height="260"></canvas>
+        <div class="trend-legend" id="trend-legend"></div>
+      </section>
+
+      <!-- Monthly Seasonality Heatmap -->
+      <section class="panel seasonality-panel">
+        <div class="panel-header">
+          <h2>Fire Seasonality</h2>
+          <span class="panel-subtitle" id="season-label"></span>
+        </div>
+        <canvas id="seasonality-chart" width="900" height="340"></canvas>
+      </section>
+
+      <!-- Anomaly Detection -->
+      <section class="panel anomaly-panel">
+        <div class="panel-header">
+          <h2>Anomaly Detection</h2>
+          <span class="panel-subtitle"
+            >Days exceeding 2× historical median for that day-of-year</span
+          >
+        </div>
+        <div class="anomaly-list" id="anomaly-list"></div>
+      </section>
+
+      <!-- Methodology -->
+      <section class="panel methodology-panel" id="methodology-panel">
+        <button class="methodology-toggle" onclick="toggleMethodology()">
+          <h2>Methodology & Data Sources</h2>
+          <svg
+            class="chevron"
+            width="16"
+            height="16"
+            viewBox="0 0 16 16"
+            fill="none"
+          >
+            <path
+              d="M4 6l4 4 4-4"
+              stroke="currentColor"
+              stroke-width="1.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+        </button>
+        <div class="methodology-content" id="methodology-content">
+          <div class="method-grid">
+            <div class="method-section">
+              <h3>Data Sources</h3>
+              <p>
+                Fire detection data from NASA's
+                <strong
+                  >Fire Information for Resource Management System
+                  (FIRMS)</strong
+                >, covering 2000–2024 across 195 countries worldwide.
+              </p>
+              <ul>
+                <li>
+                  <strong>MODIS</strong> (Moderate Resolution Imaging
+                  Spectroradiometer) — Terra (2000–present) and Aqua
+                  (2002–present) satellites. 1km spatial resolution, 1–2 day
+                  revisit.
+                </li>
+                <li>
+                  <strong>VIIRS</strong> (Visible Infrared Imaging Radiometer
+                  Suite) — Suomi NPP (2012–present). 375m spatial resolution,
+                  higher detection sensitivity.
+                </li>
+              </ul>
+            </div>
+            <div class="method-section">
+              <h3>Harmonization Approach</h3>
+              <p>
+                VIIRS detects significantly more fires than MODIS due to its
+                higher spatial resolution and thermal sensitivity. Naively
+                summing detections from both sensors creates an artificial spike
+                in 2012 when VIIRS came online.
+              </p>
+              <p>
+                We compute <strong>per-country harmonization ratios</strong> by
+                comparing MODIS and VIIRS detections during their overlap period
+                (2012–2024). The ratio is the overall total of VIIRS detections
+                divided by total MODIS detections across all overlap months
+                (minimum 6 months required):
+              </p>
+              <p class="formula">
+                Harmonized = MODIS_count × ratio + VIIRS_count
+              </p>
+              <p>
+                This scales MODIS counts upward to match VIIRS sensitivity,
+                producing a consistent time series across the full 2000–2024
+                period.
+              </p>
+            </div>
+            <hr class="method-divider" />
+            <div class="method-section">
+              <h3>Confidence Filtering</h3>
+              <p>
+                Each detection carries a confidence value.
+                <strong>High confidence</strong> filtering uses:
+              </p>
+              <ul>
+                <li>MODIS: numeric confidence ≥ 80 (range 0–100)</li>
+                <li>
+                  VIIRS: categorical confidence = "high" (low/nominal/high)
+                </li>
+              </ul>
+              <p>
+                High-confidence detections represent ~15% of total detections,
+                filtering out cloud edges, hot industrial sites, and sun glint.
+              </p>
+            </div>
+            <div class="method-section">
+              <h3>Limitations</h3>
+              <ul>
+                <li>
+                  Cloud cover causes undercounting, especially in tropical
+                  regions during wet season
+                </li>
+                <li>
+                  Satellite revisit gaps mean some fires are missed entirely
+                </li>
+                <li>
+                  MODIS pixel size (1km²) can merge multiple small fires into
+                  one detection
+                </li>
+                <li>
+                  Harmonization ratios assume stable sensor relationship over
+                  the overlap period
+                </li>
+                <li>
+                  FRP (Fire Radiative Power) values are instantaneous
+                  measurements, not total fire energy
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- ═══ FOOTER ═══ -->
+
+
+    <div class="tooltip" id="tooltip"></div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>

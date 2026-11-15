@@ -1,0 +1,1 @@
+{"country": "Seychelles", "iso": "UNK", "daily": {"2017-09-22": {"VIIRS_SNPP_SP": {"count": 1, "avg_frp": 0.99, "max_frp": 0.99, "high_conf": 0}}}, "monthly": {"2017-09": {"VIIRS": {"count": 1, "avg_frp": 0.99}}}, "yearly": {"2017": {"VIIRS": 1}}, "harmonization": null, "date_range": {"start": "2017-09-22", "end": "2017-09-22"}, "total_detections": 1}
